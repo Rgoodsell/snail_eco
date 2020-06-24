@@ -1,0 +1,52 @@
+---
+title: "Snail ecological analysis summary"
+author: "Rob Goodsell"
+date: "22/05/2020"
+output: 
+  pdf_document:
+    fig_caption: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Below is a quick walk-through of of all the ecological analysis I've done so far on the snail data. A quick overview is that I've summarised the community data using a varation on a PCA for binary data, to reduce the dimensions down to 2 PCs. I've then used these PCs along with the other positional variables in a glm to predict the probability of observing either saxatalis or arcana. This is pretty rough and ready, but shows some reasonably interesting trends depending on how far you want to go with it. 
+
+
+
+## Logisitic PCA
+
+Community data were summarised to two PCs using  `logisiticPCA` ([see here](https://cran.r-project.org/web/packages/logisticPCA/vignettes/logisticPCA.html)), which accounted for ~70% of the variability in community composition. There is some slight separation between species based on these scores:  
+
+![Logisitc PCA scores for community data.](LPCA_scores_snail.png)  
+
+
+
+## Quick & dirty binomial response GLMs
+I parameterised a handful of models to predict the probability of observing one of either species at a given site depending on the positional & ecological data, models were selected using AIC & in formulaic syntax the 'best' performing model had the structure:
+
+$$ Pr(saxatalis) = month + season  + y + z*location + year + aspect + incline + LPC1 + LPC2 $$  
+
+So that a predicted value of 1, meant a predicted observation of saxatalis, and a value of 0 meant a predicted observation of arcana. There were statistically significant associations between probability of observing _saxatalis_ and time of collection variables (year & month), location, height, and aspect, as well as significant interactions between height and location.  
+
+
+```{r , echo = FALSE, message = FALSE,results='asis'}
+library(stargazer)
+library(tidyverse)
+readRDS("snail_mod.rds") %>% stargazer::stargazer(digits = 2,single.row = TRUE,header = FALSE)
+```
+The effects of aspect, LPC1 , and interaction between height and location are summarised in fig 2.  Take aways are that increasing aspect (i.e. moving away from facing the sea) increases probability of observing _saxatalis_, increasing elevation decreases the probability in England and Wales, but increases it slightly in France. These predictions were made using median values of predictors that weren't varied. 
+
+![Effects of aspect, community structure (LPC1) and height on probability of observing _saxatalis_ across study sites.](pos_eff_snail.png)  
+
+
+
+To get a better understanding of how the positional data changes which species you're more likely to find I plotted some 3d surfaces, these might not be the best figures for publication but I found them useful to visualise the trends in the positional data. Theres a plot for each location and 
+the *x* axis is the scaled elevation variable, *y* is the aspect and *z* is the probability of observing _saxatalis_ in the surfaces for England and Wales, and as the relationship between elevation and $Pr(saxatalis)$ and elevation changed in France *z* is the probability of finding _arcana_ for the final plot.  
+
+
+![Probability surface for saxatalis across scaled height (x) and aspect(y) in England.](eng_pr_sax.png)  
+![Probability surface for saxatalis across scaled height (x) and aspect(y) in Wales.](wal_pr_sax.png)
+![Probability surface for arcana across scaled height (x) and aspect(y) in France.](fra_pr_arc.png)
+
+
